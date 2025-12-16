@@ -13,9 +13,24 @@
 
 Have Claude Code Pro but not using it at night? Transform it into an AgentOS that handles your ideas and tasks while you sleep. This is a 24/7 AI assistant daemon powered by Claude Code CLI and Python Agent SDK that processes both random thoughts and serious tasks via Slack with isolated workspaces.
 
+## 🌍 Universal AI Editor Support
+
+This fork extends Sleepless Agent to work with multiple AI editors and CLI tools, not just Claude Code. The vision is to create a universal AI task automation system that can leverage any AI coding assistant.
+
+### Current Support
+- **Claude Code**: Direct integration with Pro plan
+- **GLM**: Cost-effective execution via CCS
+- **Coming Soon**: OpenCode, CodeLlama, StarCoder, Aider, and more
+
+### Planned Features
+- Plugin architecture for any AI editor
+- Automatic cost optimization across free/paid models
+- Local model support for privacy
+- Intelligent routing based on task complexity
+
 ## ⚡ CCS Integration
 
-This fork includes intelligent multi-model execution through [CCS (Claude Code Switch)](https://github.com/kaitranntt/ccs). The system automatically routes tasks to the most cost-effective model:
+Currently includes intelligent multi-model execution through [CCS (Claude Code Switch)](https://github.com/kaitranntt/ccs):
 
 - **Planning & Review**: Claude Sonnet 4.5 for high-quality reasoning
 - **Routine Execution**: GLM for cost-effective implementation
