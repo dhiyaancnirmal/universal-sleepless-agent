@@ -35,9 +35,10 @@ ccs:
     strategy: "auto"
 
 git:
-  use_remote_repo: true
-  remote_repo_url: git@github.com:TimeLovercc/test5.git # !!!CHANGE THIS!!!
+  use_remote_repo: false  # Disable for now
+  # remote_repo_url: git@github.com:dhiyaancnirmal/universal-sleepless-agent.git
   auto_create_repo: true
+  # default_branch: master  # Optional: specify 'main' or 'master'. If not set, will auto-detect.
 
 agent:
   workspace_root: ./workspace

@@ -116,6 +116,7 @@ class SleeplessAgent:
         self.git = GitManager(
             workspace_root=str(self.config.agent.workspace_root),
             auto_create_repo=auto_create_repo,
+            # main_branch will be auto-detected (master or main)
         )
         self.git.init_repo()
         if self.use_remote_repo and self.remote_repo_url:

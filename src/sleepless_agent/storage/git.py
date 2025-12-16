@@ -18,14 +18,50 @@ class GitManager:
         self,
         workspace_root: str,
         default_task_branch: str = "tasks",
-        main_branch: str = "main",
+        main_branch: Optional[str] = None,
         auto_create_repo: bool = False,
     ):
         self.repo_path = Path(workspace_root).resolve()
         self.default_task_branch = default_task_branch
-        self.main_branch = main_branch
         self.auto_create_repo = auto_create_repo
         self._push_warning_logged = False
+
+        # Detect main branch if not specified
+        if main_branch is None:
+            self.main_branch = self._detect_default_branch()
+        else:
+            self.main_branch = main_branch
+
+    def _detect_default_branch(self) -> str:
+        """Detect the default branch (master or main) of the repository."""
+        try:
+            # Check if remote has a default branch
+            result = self._run_git("symbolic-ref", "refs/remotes/origin/HEAD", capture_output=True)
+            if result.returncode == 0:
+                # Extract branch name from refs/remotes/origin/HEAD -> refs/remotes/origin/main
+                ref = result.stdout.strip()
+                if "refs/remotes/origin/" in ref:
+                    return ref.split("/")[-1]
+
+            # Fallback: check which branches exist locally
+            result = self._run_git("branch", "--list", "main", "master", capture_output=True)
+            if result.returncode == 0:
+                branches = result.stdout.strip().split('\n')
+                # Prefer main if available, otherwise use master
+                if "main" in branches:
+                    return "main"
+                elif "master" in branches:
+                    return "master"
+
+            # Last resort: try main first, then master
+            try:
+                self._run_git("rev-parse", "--verify", "main", capture_output=True)
+                return "main"
+            except:
+                return "master"
+        except:
+            # Default to main for new repos
+            return "main"
 
     # ------------------------------------------------------------------
     # Repository bootstrap
