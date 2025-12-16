@@ -59,7 +59,7 @@ class TaskRouter:
 
         # High-value phases always use Claude
         if phase in [ModelPhase.PLANNING, ModelPhase.REVIEW]:
-            return CCSModel.CLAUDE
+            return CCSModel.DEFAULT
 
         # Execution phase model selection
         if phase == ModelPhase.EXECUTION:
@@ -72,7 +72,7 @@ class TaskRouter:
                 "debug complex", "security", "performance critical"
             ]
             if any(pattern in desc_lower for pattern in complex_patterns):
-                return CCSModel.CLAUDE
+                return CCSModel.DEFAULT
 
             # Bulk/routine tasks perfect for GLM
             routine_patterns = [
@@ -230,7 +230,6 @@ class CCSAwareExecutor(ClaudeCodeExecutor):
             self._live_update(
                 task_id,
                 phase=phase,
-                model=model.value,
                 prompt=prompt[:500] if prompt else "",
                 answer="",
                 status="running",
@@ -249,7 +248,6 @@ class CCSAwareExecutor(ClaudeCodeExecutor):
                                 self._live_update(
                                     task_id,
                                     phase=phase,
-                                    model=model.value,
                                     prompt=prompt[:500] if prompt else "",
                                     answer=text,
                                     status="running",
@@ -277,7 +275,6 @@ class CCSAwareExecutor(ClaudeCodeExecutor):
             self._live_update(
                 task_id,
                 phase=phase,
-                model=model.value,
                 prompt=prompt[:500] if prompt else "",
                 answer=output_text,
                 status="completed",
@@ -478,7 +475,6 @@ Please work through the plan systematically and update TodoWrite as you complete
                 self._live_update(
                     task_id,
                     phase="worker",
-                    model=model.value,
                     prompt=worker_prompt[:500] if worker_prompt else "",
                     answer="",
                     status="running",
@@ -507,7 +503,6 @@ Please work through the plan systematically and update TodoWrite as you complete
                                     self._live_update(
                                         task_id,
                                         phase="worker",
-                                        model=model.value,
                                         prompt=worker_prompt[:500] if worker_prompt else "",
                                         answer=text,
                                         status="running",
@@ -548,7 +543,6 @@ Please work through the plan systematically and update TodoWrite as you complete
                 self._live_update(
                     task_id,
                     phase="worker",
-                    model=model.value,
                     prompt=worker_prompt[:500] if worker_prompt else "",
                     answer=output_text,
                     status="completed" if exit_code == 0 else "error",
