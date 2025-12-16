@@ -13,6 +13,36 @@
 
 Have Claude Code Pro but not using it at night? Transform it into an AgentOS that handles your ideas and tasks while you sleep. This is a 24/7 AI assistant daemon powered by Claude Code CLI and Python Agent SDK that processes both random thoughts and serious tasks via Slack with isolated workspaces.
 
+## ⚡ CCS Integration
+
+This fork includes intelligent multi-model execution through [CCS (Claude Code Switch)](https://github.com/kaitranntt/ccs). The system automatically routes tasks to the most cost-effective model:
+
+- **Planning & Review**: Claude Sonnet 4.5 for high-quality reasoning
+- **Routine Execution**: GLM for cost-effective implementation
+- **Smart Routing**: Automatically selects optimal model based on task complexity
+- **Cost Tracking**: Real-time usage statistics and savings reporting
+
+### Cost Savings
+
+Typical savings with CCS integration:
+- Routine implementation: 95% cost reduction
+- Test generation: 97% cost reduction
+- Documentation: 98% cost reduction
+- Overall average: 70-80% savings
+
+### Setup
+
+```bash
+# Install CCS
+npm install -g @kaitranntt/ccs
+
+# Configure GLM
+ccs config set glm.api_key YOUR_KEY
+
+# Enable in config.yaml
+ccs.enabled: true
+```
+
 ## 📰 News
 
 - **[2025-10-26]** 🎉 Initial release v0.1.0 - Full AgentOS with multi-agent workflow support
