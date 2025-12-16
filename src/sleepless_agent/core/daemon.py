@@ -19,6 +19,7 @@ from sleepless_agent.core.queue import TaskQueue
 from sleepless_agent.core.task_runtime import TaskRuntime
 from sleepless_agent.core.timeout_manager import TaskTimeoutManager
 from sleepless_agent.core.executor import ClaudeCodeExecutor
+from sleepless_agent.core.ccs_executor import CCSAwareExecutor
 from sleepless_agent.storage.git import GitManager
 from sleepless_agent.utils.live_status import LiveStatusTracker
 from sleepless_agent.storage.workspace import WorkspaceSetup
@@ -88,11 +89,23 @@ class SleeplessAgent:
             night_end_hour=self.config.claude_code.night_end_hour,
         )
 
-        self.claude = ClaudeCodeExecutor(
-            workspace_root=str(self.config.agent.workspace_root),
-            live_status_tracker=self.live_status_tracker,
-            default_model=self.config.claude_code.model,
-        )
+        # Use CCS-aware executor if CCS is enabled
+        if hasattr(self.config, 'ccs') and self.config.ccs.enabled:
+            self.claude = CCSAwareExecutor(
+                workspace_root=str(self.config.agent.workspace_root),
+                live_status_tracker=self.live_status_tracker,
+                default_model=self.config.claude_code.model,
+                enable_ccs=self.config.ccs.enabled,
+                ccs_config=self.config.ccs.__dict__ if hasattr(self.config.ccs, '__dict__') else {},
+            )
+            logger.info("daemon.executor.ccs_enabled")
+        else:
+            self.claude = ClaudeCodeExecutor(
+                workspace_root=str(self.config.agent.workspace_root),
+                live_status_tracker=self.live_status_tracker,
+                default_model=self.config.claude_code.model,
+            )
+            logger.info("daemon.executor.standard")
 
         self.results = ResultManager(
             str(self.config.agent.db_path),
@@ -286,6 +299,19 @@ class SleeplessAgent:
 
                     for project_id in self.report_generator.list_project_reports():
                         self.report_generator.summarize_project_report(project_id)
+
+                    # Add CCS model usage statistics if available
+                    if hasattr(self.claude, 'get_model_usage_stats'):
+                        try:
+                            stats = self.claude.get_model_usage_stats()
+                            logger.info(
+                                "ccs.daily_stats",
+                                total_cost=stats.get("total_cost_usd", 0),
+                                savings=stats.get("cost_savings", {}).get("savings_percent", 0),
+                                model_breakdown=stats.get("model_breakdown", {})
+                            )
+                        except Exception as exc:
+                            logger.warning("ccs.stats_failed", error=str(exc))
 
                     self.report_generator.update_recent_reports()
                     self.last_daily_summarization = now
