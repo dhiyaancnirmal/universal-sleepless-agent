@@ -14,10 +14,8 @@ class ModelPhase(Enum):
 
 
 class CCSModel(Enum):
-    CLAUDE = "claude"
+    DEFAULT = "default"  # Default Claude Code account
     GLM = "glm"
-    GEMINI = "gemini"
-    KIMI = "kimi"
 
 
 class TaskRouter:
@@ -26,19 +24,17 @@ class TaskRouter:
     def __init__(self, config=None):
         self.config = config or {}
         self.model_costs = {
-            CCSModel.CLAUDE: 0.015,  # $15 per 1M tokens
+            CCSModel.DEFAULT: 0.015,  # $15 per 1M tokens
             CCSModel.GLM: 0.0005,   # $0.50 per 1M tokens
-            CCSModel.GEMINI: 0.0025, # $2.50 per 1M tokens
-            CCSModel.KIMI: 0.00025,  # $0.25 per 1M tokens
         }
 
     def select_model(self, phase: ModelPhase, task_description: str,
                     task_priority: str = "thought") -> CCSModel:
         """Select optimal model based on phase and task characteristics"""
 
-        # High-value phases always use Claude
+        # High-value phases always use DEFAULT (Claude)
         if phase in [ModelPhase.PLANNING, ModelPhase.REVIEW]:
-            return CCSModel.CLAUDE
+            return CCSModel.DEFAULT
 
         # Execution phase model selection
         if phase == ModelPhase.EXECUTION:
@@ -50,7 +46,7 @@ class TaskRouter:
                 "debug complex", "security", "performance critical"
             ]
             if any(pattern in desc_lower for pattern in complex_patterns):
-                return CCSModel.CLAUDE
+                return CCSModel.DEFAULT
 
             # Bulk/routine tasks perfect for GLM
             routine_patterns = [
@@ -60,15 +56,11 @@ class TaskRouter:
             if any(pattern in desc_lower for pattern in routine_patterns):
                 return CCSModel.GLM
 
-            # Large context tasks for Kimi
-            if "large codebase" in desc_lower or "comprehensive" in desc_lower:
-                return CCSModel.KIMI
-
             # Default to GLM for cost efficiency
             return CCSModel.GLM
 
         # Default fallback
-        return CCSModel.CLAUDE
+        return CCSModel.DEFAULT
 
     def estimate_cost(self, model: CCSModel, estimated_tokens: int) -> float:
         """Estimate cost for model usage"""
@@ -83,15 +75,14 @@ def test_task_router():
 
     test_cases = [
         # (phase, task_description, expected_model, reason)
-        (ModelPhase.PLANNING, "Build a user authentication system", CCSModel.CLAUDE, "Planning always uses Claude"),
-        (ModelPhase.REVIEW, "Check code for security issues", CCSModel.CLAUDE, "Review always uses Claude"),
+        (ModelPhase.PLANNING, "Build a user authentication system", CCSModel.DEFAULT, "Planning always uses Claude"),
+        (ModelPhase.REVIEW, "Check code for security issues", CCSModel.DEFAULT, "Review always uses Claude"),
         (ModelPhase.EXECUTION, "Implement CRUD operations", CCSModel.GLM, "Routine implementation"),
-        (ModelPhase.EXECUTION, "Design microservices architecture", CCSModel.CLAUDE, "Complex design work"),
+        (ModelPhase.EXECUTION, "Design microservices architecture", CCSModel.DEFAULT, "Complex design work"),
         (ModelPhase.EXECUTION, "Write unit tests for API", CCSModel.GLM, "Test generation"),
-        (ModelPhase.EXECUTION, "Optimize database queries", CCSModel.CLAUDE, "Performance optimization"),
+        (ModelPhase.EXECUTION, "Optimize database queries", CCSModel.DEFAULT, "Performance optimization"),
         (ModelPhase.EXECUTION, "Add documentation", CCSModel.GLM, "Documentation is routine"),
-        (ModelPhase.EXECUTION, "Analyze entire codebase", CCSModel.KIMI, "Large context analysis"),
-        (ModelPhase.EXECUTION, "Fix security vulnerability", CCSModel.CLAUDE, "Security is critical"),
+        (ModelPhase.EXECUTION, "Fix security vulnerability", CCSModel.DEFAULT, "Security is critical"),
         (ModelPhase.EXECUTION, "Create REST API endpoints", CCSModel.GLM, "Standard implementation"),
     ]
 
@@ -105,7 +96,7 @@ def test_task_router():
         selected = router.select_model(phase, task)
         cost = router.estimate_cost(selected, 1000)
 
-        if selected == CCSModel.CLAUDE:
+        if selected == CCSModel.DEFAULT:
             total_claude_cost += cost
         else:
             total_glm_cost += cost
@@ -119,7 +110,7 @@ def test_task_router():
     print(f"  Total: ${total_claude_cost + total_glm_cost:.4f}")
 
     # Calculate savings if all were Claude
-    all_claude_cost = len(test_cases) * router.estimate_cost(CCSModel.CLAUDE, 1000)
+    all_claude_cost = len(test_cases) * router.estimate_cost(CCSModel.DEFAULT, 1000)
     actual_cost = total_claude_cost + total_glm_cost
     savings = all_claude_cost - actual_cost
     savings_percent = (savings / all_claude_cost * 100) if all_claude_cost > 0 else 0
@@ -135,10 +126,8 @@ def test_ccs_commands():
     print("\n🔌 Testing CCS Command Generation\n")
 
     commands = {
-        CCSModel.CLAUDE: ["ccs", "claude"],
+        CCSModel.DEFAULT: ["claude"],  # Direct Claude CLI
         CCSModel.GLM: ["ccs", "glm"],
-        CCSModel.GEMINI: ["ccs", "gemini"],
-        CCSModel.KIMI: ["ccs", "kimi"],
     }
 
     for model, cmd in commands.items():

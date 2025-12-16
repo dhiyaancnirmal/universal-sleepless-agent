@@ -38,10 +38,8 @@ class ModelPhase(Enum):
 
 class CCSModel(Enum):
     """Supported models via CCS"""
-    CLAUDE = "claude"  # Sonnet 4.5 for high-value tasks
-    GLM = "glm"       # GLM for cost-effective execution
-    GEMINI = "gemini" # Gemini for alternative review
-    KIMI = "kimi"     # Kimi for large context tasks
+    DEFAULT = "default"  # Default Claude Code account
+    GLM = "glm"          # GLM for cost-effective execution
 
 
 class TaskRouter:
@@ -51,10 +49,8 @@ class TaskRouter:
         """Initialize router with configuration"""
         self.config = config
         self.model_costs = {
-            CCSModel.CLAUDE: 0.015,  # $15 per 1M tokens
+            CCSModel.DEFAULT: 0.015,  # $15 per 1M tokens
             CCSModel.GLM: 0.0005,   # $0.50 per 1M tokens
-            CCSModel.GEMINI: 0.0025, # $2.50 per 1M tokens
-            CCSModel.KIMI: 0.00025,  # $0.25 per 1M tokens
         }
 
     def select_model(self, phase: ModelPhase, task_description: str,
@@ -86,15 +82,11 @@ class TaskRouter:
             if any(pattern in desc_lower for pattern in routine_patterns):
                 return CCSModel.GLM
 
-            # Large context tasks for Kimi
-            if "large codebase" in desc_lower or "comprehensive" in desc_lower:
-                return CCSModel.KIMI
-
             # Default to GLM for cost efficiency
             return CCSModel.GLM
 
         # Default fallback
-        return CCSModel.CLAUDE
+        return CCSModel.DEFAULT
 
     def get_model_config(self, model: CCSModel) -> dict:
         """Get model-specific configuration"""
@@ -180,6 +172,12 @@ class CCSAwareExecutor(ClaudeCodeExecutor):
         if not self.enable_ccs:
             return ["claude"]
 
+        # For DEFAULT model, use direct Claude CLI
+        if model == CCSModel.DEFAULT:
+            model_config = self.task_router.get_model_config(model)
+            if model_config.get("use_direct_claude", False):
+                return ["claude"]
+
         ccs_binary = self.ccs_config.get("binary_path", "ccs")
         model_config = self.task_router.get_model_config(model)
 
@@ -187,15 +185,8 @@ class CCSAwareExecutor(ClaudeCodeExecutor):
         cmd = [ccs_binary]
 
         # Add model-specific flags
-        if model == CCSModel.CLAUDE:
-            # Use default claude profile
-            cmd.append("claude")
-        elif model == CCSModel.GLM:
+        if model == CCSModel.GLM:
             cmd.append("glm")
-        elif model == CCSModel.GEMINI:
-            cmd.append("gemini")
-        elif model == CCSModel.KIMI:
-            cmd.append("kimi")
 
         # Add any additional flags from config
         additional_flags = model_config.get("flags", [])
@@ -311,8 +302,8 @@ class CCSAwareExecutor(ClaudeCodeExecutor):
     ) -> Tuple[str, dict]:
         """Execute planner phase with optimal model"""
 
-        # Always use Claude for planning (high-value reasoning)
-        model = CCSModel.CLAUDE if self.enable_ccs else None
+        # Always use DEFAULT (Claude) for planning (high-value reasoning)
+        model = CCSModel.DEFAULT if self.enable_ccs else None
 
         # Reuse parent logic but with model switching
         if self.enable_ccs and model:
@@ -595,8 +586,8 @@ Please work through the plan systematically and update TodoWrite as you complete
     ) -> Tuple[str, str, list, list, dict]:
         """Execute evaluator phase with optimal model"""
 
-        # Always use Claude for evaluation (high-quality review)
-        model = CCSModel.CLAUDE if self.enable_ccs else None
+        # Always use DEFAULT (Claude) for evaluation (high-quality review)
+        model = CCSModel.DEFAULT if self.enable_ccs else None
 
         if self.enable_ccs and model:
             # Get allowed directories

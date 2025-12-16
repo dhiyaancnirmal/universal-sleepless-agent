@@ -14,20 +14,13 @@ ccs:
 
   # Model configurations
   models:
-    claude:
-      # Sonnet 4.5 for planning and review
+    default:
+      # Use default Claude Code account for planning and review
+      use_direct_claude: true
       flags: []
 
     glm:
       # GLM for cost-effective execution
-      flags: []
-
-    gemini:
-      # Gemini for alternative review
-      flags: []
-
-    kimi:
-      # Kimi for large context tasks
       flags: []
 
   # Cost optimization settings
